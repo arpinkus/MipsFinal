@@ -24,11 +24,18 @@
 
 .end_macro 
 
-.macro breakArray(%arr)
+.macro splitArray(%arr)
 
 .end_macro
 
-.data
+.macro putArrayTogether
+
+.end_macro 
+
+.macro compareAndSort(%arr, %l, %m)
+
+.end_macro 
+
 # Arrays to Sort #
 array: .word 4,2,5,6,1,3
 space: .space 48
