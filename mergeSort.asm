@@ -36,6 +36,7 @@
 
 .end_macro 
 
+.data
 # Arrays to Sort #
 array: .word 4,2,5,6,1,3
 space: .space 48
