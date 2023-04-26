@@ -1,4 +1,4 @@
-# Name: Abigail Pinkus, 
+# Name: Abigail Pinkus, Ryan Yang, David Jin, Joshua Ho
 # Date: May 12, 2023
 # Program: Merge Sort: Final
 # ~ main, Loop, Exit
@@ -6,7 +6,7 @@
 # ~ input/output #
 # ~ break up array #
 # ~ sort #
-# ~ put together #
+# ~ put together #	
 # ~ output #
 
 # ~ step 1: start
