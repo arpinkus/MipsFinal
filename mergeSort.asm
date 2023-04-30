@@ -1,56 +1,48 @@
 # Name: Abigail Pinkus, Ryan Yang, David Jin, Joshua Ho
 # Date: May 12, 2023
-# Program: Merge Sort: Final
-# ~ main, Loop, Exit
-# ~ Take in user input values for array size n. #
-# ~ input/output #
-# ~ break up array #
-# ~ sort #
-# ~ put together #	
-# ~ output #
+# Program: Caesar Cipher
 
-# ~ step 1: start
-# ~ step 2: declare array and left, right, mid variable
-# ~ step 3: perform merge function.
-    # ~ if left > right
-        # ~ return
-    # ~ mid= (left+right)/2
-    # ~ mergesort(array, left, mid)
-    # ~ mergesort(array, mid+1, right)
-    # ~ merge(array, left, mid, right)
-# ~ step 4: Stop
 
-.macro userInput
-
-.end_macro 
-
-.macro splitArray(%arr)
-
+.macro shift(%int)
+	addi $t1, $t0, %int
 .end_macro
 
-.macro putArrayTogether
+.macro printAscii(%int)
+	li $v0, 1
+	move $a0, %int
+	syscall
+.end_macro
 
-.end_macro 
+.data
 
-.macro compareAndSort(%arr, %l, %m)
-
-.end_macro 
-
-# Arrays to Sort #
-array: .word 4,2,5,6,1,3
-space: .space 48
+	string: .asciiz "hello there!"
+	newLine: .asciiz "\n"
 
 .text
-main:
-	li $t0, 0
-LoopUserInput:
-	bge $t0, 6, AfterUserInput
-	userInput
-	# possibly write code to save int's here or in marco
+
+
+	# Loop through string character by character
 	
-	addi $t0, $t0, 1
-AfterUserInput:
+	# Get address of string
+	la $t7, string
+loop:
+	lb $t2, 0($t7)
 	
+	printAscii($t2)
+	
+	li $v0, 4
+	la $a0, newLine
+	syscall
+	
+	addi $t7, $t7, 1
+	
+	# Branch if "\n" is read
+	#beq $t2, 0x0a, Exit
+	
+	# Branch at end of string
+	beq $t2, 0x00, Exit
+	
+	j loop
 
 Exit:
 	# Exit Program #
