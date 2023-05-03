@@ -26,44 +26,91 @@ move $a0, %int
 syscall
 .end_macro
 
+.macro isValidLetter(%int)
+blt %int, 65, Fail
+ble %int, 90, Uppercase
+ble %int, 122, Lowercase
+Uppercase:
+li $t6, 1 #1 = uppercase
+j After
+Lowercase:
+blt %int, 97, Fail
+li $t6, 2 #2 = lowercase
+j After
+Fail:
+li $t6, 0 #0 = not a letter
+
+After:
+# Testing Print #
+li $v0, 4
+la $a0, check
+syscall
+li $v0, 1
+move $a0, $t6
+syscall
+.end_macro 
+
+# The loop ensures that the shift is actually shifted by the user's amount. 
+# If the shift amount entered is greater than 26, the shift is looped more than once. (it only needs to loop by divisions of 26)
 .macro shiftAscii(%int, %shift)
-add $t3, %int, %shift
-bge $t3, 90, Lowercase
-Loop:
+isValidLetter(%int)
+# Check if Char is a Letter #
+beq $t6, 0, After
+
+# Add by Shift Amount #
+add $t2, %int, %shift
+
+# Check if Lowercase or Uppercase #
+beq $t6, 2, Lowercase
+beq $t6, 1, Uppercase #unnecessary (just for certainty)
+
+# Loop for Uppercase #
+Uppercase:
 # Exit if Number is in Range #
-ble $t3, 91, After
+ble $t2, 91, After
 
 # Bring Character Back to 'A' #
 li $t4, 26 #save number 26
-sub $t3, $t3, $t4
+sub $t2, $t2, $t4
 
 # Loop #
-j Loop
+j Uppercase
 
+# Loop for Lowercase #
 Lowercase:
-ble $t3, 148, After
+ble $t2, 122, After
 
 # Bring Character Back to 'a' #
 li $t4, 26 #save number 26
-sub $t3, $t3, $t4
+sub $t2, $t2, $t4
 
 # Loop #
 j Lowercase
 
 After:
+# Testing #
+# Print newLine #
 li $v0, 4
 la $a0, newLine
 syscall
+syscall
+# Print New Shifted Ascii Number #
+li $v0, 1
+move $a0, $t2
+syscall
+# Print newLine #
+li $v0, 4
+la $a0, newLine
 syscall
 .end_macro 
 
 .data
 getString: .asciiz "\nEnter a string: "
 getShiftAmount: .asciiz "\nEnter a shift amount: "
-fillerString: .asciiz  "\nThis is a fake output string"
 buffer: .space 150
 string: .asciiz "hello there!"
 newLine: .asciiz "\n"
+check: .asciiz "\nCheck number: "
 
 .text
 main:
@@ -106,9 +153,6 @@ loop:
 	
 	# Shift #
 	shiftAscii($t2, $s7)
-	li $v0, 1
-	move $a0, $t3
-	syscall
 	
 	addi $t7, $t7, 1
 	
@@ -123,15 +167,6 @@ loop:
 After:
 	# Print Out New String #
 	
-Output:
-	
-	# filler code #
-	la $s1, fillerString
-	
-	# Assumed Output with no Middle (for now) #
-	li $v0, 4
-	move $s1, $a0
-	syscall
 Exit:
 	# Exit Program #
 	li $v0, 10
