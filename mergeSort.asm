@@ -13,10 +13,18 @@
 	syscall
 .end_macro
 
+.macro compareAndSort(%arr, %l, %m)
+
+.end_macro 
+
 .data
 
 	string: .asciiz "hello there!"
 	newLine: .asciiz "\n"
+
+# Arrays to Sort #
+array: .word 4,2,5,6,1,3
+space: .space 48
 
 .text
 
