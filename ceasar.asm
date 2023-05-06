@@ -17,100 +17,102 @@
 # ~ print result
 
 .macro shift(%int)
-addi $t1, $t0, %int
+	addi $t1, $t0, %int
 .end_macro
 
 .macro printAscii(%int)
-li $v0, 1
-move $a0, %int
-syscall
+	li $v0, 1
+	move $a0, %int
+	syscall
 .end_macro
 
 .macro isValidLetter(%int)
-blt %int, 65, Fail
-ble %int, 90, Uppercase
-ble %int, 122, Lowercase
+	blt %int, 65, Fail
+	ble %int, 90, Uppercase
+	ble %int, 122, Lowercase
 Uppercase:
-li $t6, 1 #1 = uppercase
-j After
+	li $t6, 1 #1 = uppercase
+	j Success
 Lowercase:
-blt %int, 97, Fail
-li $t6, 2 #2 = lowercase
-j After
+	blt %int, 97, Fail
+	li $t6, 2 #2 = lowercase
+	j Success
 Fail:
-li $t6, 0 #0 = not a letter
+	li $t6, 0 #0 = not a letter
 
-After:
-# Testing Print #
-li $v0, 4
-la $a0, check
-syscall
-li $v0, 1
-move $a0, $t6
-syscall
+Success:
+	# Testing Print #
+	li $v0, 4
+	la $a0, check
+	syscall
+	li $v0, 1
+	move $a0, $t6
+	syscall
 .end_macro 
 
 # The loop ensures that the shift is actually shifted by the user's amount. 
 # If the shift amount entered is greater than 26, the shift is looped more than once. (it only needs to loop by divisions of 26)
 .macro shiftAscii(%int, %shift)
-isValidLetter(%int)
-# Check if Char is a Letter #
-beq $t6, 0, After
+	isValidLetter(%int)
+	# Check if Char is a Letter #
+	beq $t6, 0, After
 
-# Add by Shift Amount #
-add $t2, %int, %shift
+	# Add by Shift Amount #
+	add $t2, %int, %shift
 
-# Check if Lowercase or Uppercase #
-beq $t6, 2, Lowercase
-beq $t6, 1, Uppercase #unnecessary (just for certainty)
+	# Check if Lowercase or Uppercase #
+	beq $t6, 2, Lowercase
+	beq $t6, 1, Uppercase #unnecessary (just for certainty)
 
 # Loop for Uppercase #
 Uppercase:
-# Exit if Number is in Range #
-ble $t2, 91, After
+	# Exit if Number is in Range #
+	ble $t2, 91, After
 
-# Bring Character Back to 'A' #
-li $t4, 26 #save number 26
-sub $t2, $t2, $t4
+	# Bring Character Back to 'A' #
+	li $t4, 26 #save number 26
+	sub $t2, $t2, $t4
 
-# Loop #
-j Uppercase
+	# Loop #
+	j Uppercase
 
-# Loop for Lowercase #
-Lowercase:
-ble $t2, 122, After
+	# Loop for Lowercase #
+	Lowercase:
+	ble $t2, 122, After
 
-# Bring Character Back to 'a' #
-li $t4, 26 #save number 26
-sub $t2, $t2, $t4
+	# Bring Character Back to 'a' #
+	li $t4, 26 #save number 26
+	sub $t2, $t2, $t4
 
-# Loop #
-j Lowercase
+	# Loop #
+	j Lowercase
 
 After:
-# Testing #
-# Print newLine #
-li $v0, 4
-la $a0, newLine
-syscall
-syscall
-# Print New Shifted Ascii Number #
-li $v0, 1
-move $a0, $t2
-syscall
-# Print newLine #
-li $v0, 4
-la $a0, newLine
-syscall
+	# Testing #
+	# Print newLine #
+	li $v0, 4
+	la $a0, newLine
+	syscall
+
+	# Print New Shifted Ascii Number #
+	li $v0, 1
+	move $a0, $t2
+	syscall
+	
+	# Print newLine #
+	li $v0, 4
+	la $a0, newLine
+	syscall
 .end_macro 
 
 .data
-getString: .asciiz "\nEnter a string: "
-getShiftAmount: .asciiz "\nEnter a shift amount: "
-buffer: .space 150
-string: .asciiz "hello there!"
-newLine: .asciiz "\n"
-check: .asciiz "\nCheck number: "
+	outputBuffer: .space 100
+	getString: .asciiz "\nEnter a string: "
+	getShiftAmount: .asciiz "\nEnter a shift amount: "
+	buffer: .space 150
+	newLine: .asciiz "\n"
+	check: .asciiz "\nCheck number: "
+	shiftedString: .asciiz "\nShifted string: "
 
 .text
 main:
@@ -140,12 +142,11 @@ Input:
 	# Loop through string character by character
 	
 	# Get address of string
-	#la $t7, string
-	move $t7, $a0
+	la $t7, buffer
+	la $t8, outputBuffer
+	#move $t7, $a0
 loop:
 	lb $t2, 0($t7)
-	
-	printAscii($t2)
 	
 	li $v0, 4
 	la $a0, newLine
@@ -153,11 +154,13 @@ loop:
 	
 	# Shift #
 	shiftAscii($t2, $s7)
+	sb $t2, 0($t8)
 	
 	addi $t7, $t7, 1
+	addi $t8, $t8, 1
 	
 	# Branch if "\n" is read
-	#beq $t2, 0x0a, Exit
+	beq $t2, 0x0a, After
 	
 	# Branch at end of string
 	beq $t2, 0x00, After
@@ -166,6 +169,11 @@ loop:
 	
 After:
 	# Print Out New String #
+	li $v0, 4
+	la $a0, shiftedString
+	syscall
+	la $a0, outputBuffer
+	syscall
 	
 Exit:
 	# Exit Program #
