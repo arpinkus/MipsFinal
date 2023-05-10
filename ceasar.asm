@@ -42,12 +42,12 @@ Fail:
 
 Success:
 	# Testing Print #
-	li $v0, 4
-	la $a0, check
-	syscall
-	li $v0, 1
-	move $a0, $t6
-	syscall
+	#li $v0, 4
+	#la $a0, check
+	#syscall
+	#li $v0, 1
+	#move $a0, $t6
+	#syscall
 .end_macro 
 
 # The loop ensures that the shift is actually shifted by the user's amount. 
@@ -55,7 +55,7 @@ Success:
 .macro shiftAscii(%int, %shift)
 	isValidLetter(%int)
 	# Check if Char is a Letter #
-	beq $t6, 0, After
+	beq $t6, 0, shift_end
 
 	# Add by Shift Amount #
 	add $t2, %int, %shift
@@ -67,7 +67,7 @@ Success:
 # Loop for Uppercase #
 Uppercase:
 	# Exit if Number is in Range #
-	ble $t2, 91, After
+	ble $t2, 91, shift_end
 
 	# Bring Character Back to 'A' #
 	li $t4, 26 #save number 26
@@ -78,7 +78,7 @@ Uppercase:
 
 	# Loop for Lowercase #
 	Lowercase:
-	ble $t2, 122, After
+	ble $t2, 122, shift_end
 
 	# Bring Character Back to 'a' #
 	li $t4, 26 #save number 26
@@ -87,22 +87,22 @@ Uppercase:
 	# Loop #
 	j Lowercase
 
-After:
+shift_end:
 	# Testing #
 	# Print newLine #
-	li $v0, 4
-	la $a0, newLine
-	syscall
+	#li $v0, 4
+	#la $a0, newLine
+	#syscall
 
 	# Print New Shifted Ascii Number #
-	li $v0, 1
-	move $a0, $t2
-	syscall
+	#li $v0, 1
+	#move $a0, $t2
+	#syscall
 	
 	# Print newLine #
-	li $v0, 4
-	la $a0, newLine
-	syscall
+	#li $v0, 4
+	#la $a0, newLine
+	#syscall
 .end_macro 
 
 .data
@@ -111,12 +111,44 @@ After:
 	getShiftAmount: .asciiz "\nEnter a shift amount: "
 	buffer: .space 150
 	newLine: .asciiz "\n"
-	check: .asciiz "\nCheck number: "
+	#check: .asciiz "\nCheck number: "
+	
 	shiftedString: .asciiz "\nShifted string: "
-
+	
+	
+	menuPrompt: .asciiz "\n--------------------MAIN MENU--------------------\n(1) Apply shift\n(2) Decrypt string\n\nEnter '1' or '2' for your selection: "
+	lineBreak: .asciiz "\n-------------------------------------------------\n"
+	invalidInput: .asciiz "\nPlease provide a valid input!\n"
 .text
 main:
-Input:
+menu:
+	# Print menu
+	li $v0, 4
+	la $a0, menuPrompt
+	syscall
+	
+	# Get user input
+	li $v0, 5
+	syscall
+	move $s1, $v0
+	
+	# Print line break
+	li $v0, 4
+	la $a0, lineBreak
+	syscall
+	
+	beq $s1, 1, encrypt # If input is 1, encrypt string
+	beq $s1, 2, decrypt # If input is 2, decrypt string
+
+	# Invalid input
+	li $v0, 4
+	la $a0, invalidInput
+	syscall
+	
+	j menu
+	
+
+encrypt:
 	# Prompt User for String #
 	li $v0, 4
 	la $a0, getString
@@ -148,9 +180,9 @@ Input:
 loop:
 	lb $t2, 0($t7)
 	
-	li $v0, 4
-	la $a0, newLine
-	syscall
+	#li $v0, 4
+	#la $a0, newLine
+	#syscall
 	
 	# Shift #
 	shiftAscii($t2, $s7)
@@ -160,20 +192,24 @@ loop:
 	addi $t8, $t8, 1
 	
 	# Branch if "\n" is read
-	beq $t2, 0x0a, After
+	beq $t2, 0x0a, encrypt_end
 	
 	# Branch at end of string
-	beq $t2, 0x00, After
+	beq $t2, 0x00, encrypt_end
 	
 	j loop
 	
-After:
+encrypt_end:
 	# Print Out New String #
 	li $v0, 4
 	la $a0, shiftedString
 	syscall
 	la $a0, outputBuffer
 	syscall
+	
+	j Exit
+	
+decrypt:
 	
 Exit:
 	# Exit Program #
