@@ -116,7 +116,7 @@ shift_end:
 	shiftedString: .asciiz "\nShifted string: "
 	
 	
-	menuPrompt: .asciiz "\n--------------------MAIN MENU--------------------\n(1) Apply shift\n(2) Decrypt string\n\nEnter '1' or '2' for your selection: "
+	menuPrompt: .asciiz "\n--------------------MAIN MENU--------------------\n(1) Encrypt string\n(2) Decrypt string\n\nEnter '1' or '2' for your selection: "
 	lineBreak: .asciiz "\n-------------------------------------------------\n"
 	invalidInput: .asciiz "\nPlease provide a valid input!\n"
 .text
