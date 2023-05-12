@@ -146,6 +146,8 @@ shift_end:
 	buffer: .space 150
 	newLine: .asciiz "\n"
 	#check: .asciiz "\nCheck number: "
+	decryptPrompt: .asciiz "\n(1) Know Shift Amount\n(2)Do Not Know Shift Amount\nEnter '1' or '2' for your selection: "
+	shiftAgain: .asciiz "\n(1) Yes\n(2) No\nShift Again?: "
 	
 	shiftedString: .asciiz "\nShifted string: "
 	
@@ -244,6 +246,34 @@ encrypt_end:
 	j Exit
 	
 decrypt:
+	# Print decrypt menu
+	li $v0, 4
+	la $a0, decryptPrompt
+	syscall
+	
+	# Get user input
+	li $v0, 5
+	syscall
+	move $s1, $v0
+	
+	# Print line break
+	li $v0, 4
+	la $a0, lineBreak
+	syscall
+	
+	move $t5, $zero
+	addi $t5, $t5, 1
+	beq $s1, 1, decryptByShift # If input is 1, encrypt string
+	beq $s1, 2, decryptBy1 # If input is 2, decrypt string
+
+	# Invalid input
+	li $v0, 4
+	la $a0, invalidInput
+	syscall
+	
+	j menu
+
+decryptByShift:
 	# Prompt User for String #
 	li $v0, 4
 	la $a0, getString
@@ -304,6 +334,74 @@ decrypt_end:
 	syscall
 	
 	j Exit
+	
+decryptBy1:
+	# Prompt User for String #
+	li $v0, 4
+	la $a0, getString
+	syscall
+	
+	# Get User String #
+	li $v0, 8
+	la $a0, buffer #buffer
+	li $a1, 100  #max characters to read
+	syscall
+	move $s0, $v0  #save user string in $s0
+	
+	# Get address of string
+	la $t7, buffer
+	la $t8, outputBuffer
+	#move $t7, $a0
+shift1:
+	lb $t2, 0($t7)
+	
+	# Shift #
+	shiftAscii($t2, $t5)
+	sb $t2, 0($t8)
+	
+	addi $t7, $t7, 1
+	addi $t8, $t8, 1
+	
+	# Branch if "\n" is read
+	beq $t2, 0x0a, again
+	
+	# Branch at end of string
+	beq $t2, 0x00, again
+	
+	j shift1
+	
+again:
+	# Print Out New String #
+	li $v0, 4
+	la $a0, shiftedString
+	syscall
+	la $a0, outputBuffer
+	syscall
+	
+	
+	# Ask user if they want to shift again
+	li $v0, 4
+	la $a0, shiftAgain
+	syscall
+	
+	# Get user input
+	li $v0, 5
+	syscall
+	move $s1, $v0
+	
+	la $t7, buffer
+	la $t8, outputBuffer
+	addi $t5, $t5, 1
+	beq $s1, 1, shift1
+	beq $s1, 2, Exit
+	
+	# Invalid input
+	li $v0, 4
+	la $a0, invalidInput
+	syscall
+	
+	j again
+	
 	
 Exit:
 	# Exit Program #
