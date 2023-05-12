@@ -27,9 +27,13 @@
 .end_macro
 
 .macro isValidLetter(%int)
+	blt %int, 48, Fail
+	ble %int, 57, number
 	blt %int, 65, Fail
 	ble %int, 90, Uppercase
+	blt %int, 97, Fail
 	ble %int, 122, Lowercase
+	bgt %int, 122, Fail
 Uppercase:
 	li $t6, 1 #1 = uppercase
 	j Success
@@ -39,7 +43,11 @@ Lowercase:
 	j Success
 Fail:
 	li $t6, 0 #0 = not a letter
-
+	j Success
+	
+number:
+	li $t6, 3 #3 = a number
+	
 Success:
 	# Testing Print #
 	#li $v0, 4
@@ -63,29 +71,55 @@ Success:
 	# Check if Lowercase or Uppercase #
 	beq $t6, 2, Lowercase
 	beq $t6, 1, Uppercase #unnecessary (just for certainty)
+	beq $t6, 3, Number
+	
+#-----------------------------------------------------we can move the li $t4, 26 before all the labels so that its just written once, unless $t4 is used for something other than storing 26------------------
 
 # Loop for Uppercase #
 Uppercase:
 	# Exit if Number is in Range #
+	blt $t2, 65, negativeShiftUpper
 	ble $t2, 91, shift_end
+	
 
 	# Bring Character Back to 'A' #
 	li $t4, 26 #save number 26
 	sub $t2, $t2, $t4
-
+	j Uppercase
+negativeShiftUpper:
+	#when decrypting or negative shift
+	addi $t2, $t2, 26
 	# Loop #
 	j Uppercase
 
 	# Loop for Lowercase #
-	Lowercase:
+Lowercase:
+	blt $t2, 97, negativeShiftLower
 	ble $t2, 122, shift_end
 
 	# Bring Character Back to 'a' #
 	li $t4, 26 #save number 26
 	sub $t2, $t2, $t4
+	j Lowercase
+negativeShiftLower:
+	#when decrypting or negative shift
+	addi $t2, $t2, 26
 
 	# Loop #
 	j Lowercase
+	
+Number:
+	#exit if number is in range
+	blt $t2, 48, numberShift
+	ble $t2, 57, shift_end
+	
+	# Bring number back to '0' #
+	subi $t2, $t2, 10
+	j Number
+numberShift:
+	addi $t2, $t2, 10
+	j Number
+	
 
 shift_end:
 	# Testing #
@@ -210,6 +244,66 @@ encrypt_end:
 	j Exit
 	
 decrypt:
+	# Prompt User for String #
+	li $v0, 4
+	la $a0, getString
+	syscall
+	
+	# Get User String #
+	li $v0, 8
+	la $a0, buffer #buffer
+	li $a1, 100  #max characters to read
+	syscall
+	move $s0, $v0  #save user string in $s0
+	
+	# Prompt User for Shift Amount #
+	li $v0, 4
+	la $a0, getShiftAmount
+	syscall
+	
+	# Get User Int #
+	li $v0, 5
+	syscall
+	move $s7, $v0  #save shift in $s7
+	mul $s7, $s7, -1
+	
+	# Loop through string character by character
+	
+	# Get address of string
+	la $t7, buffer
+	la $t8, outputBuffer
+	#move $t7, $a0
+deloop:
+	lb $t2, 0($t7)
+	
+	#li $v0, 4
+	#la $a0, newLine
+	#syscall
+	
+	# Shift #
+	shiftAscii($t2, $s7)
+	sb $t2, 0($t8)
+	
+	addi $t7, $t7, 1
+	addi $t8, $t8, 1
+	
+	# Branch if "\n" is read
+	beq $t2, 0x0a, decrypt_end
+	
+	# Branch at end of string
+	beq $t2, 0x00, decrypt_end
+	
+	j deloop
+	
+decrypt_end:
+	# Print Out New String #
+	li $v0, 4
+	la $a0, shiftedString
+	syscall
+	la $a0, outputBuffer
+	syscall
+	
+	j Exit
 	
 Exit:
 	# Exit Program #
