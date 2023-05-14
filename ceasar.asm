@@ -390,7 +390,7 @@ again:
 	la $t7, buffer
 	la $t8, outputBuffer
 	# Add user increment to shift amount
-	add $t5, $t5, $s1
+	add $t5, $t5, $s2
 	#shift by new amount if 1, exit program if 2
 	beq $s1, 1, shift1
 	beq $s1, 2, Exit
