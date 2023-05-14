@@ -151,7 +151,7 @@ shift_end:
 	shiftAgain: .asciiz "\n(1) Yes\n(2) No\nShift Again?: "
 	
 	shiftedString: .asciiz "\nShifted string: "
-	
+	increment: .asciiz "\nIncrement by '1' or '-1'\nEnter '1' or '-1': "	
 	
 	menuPrompt: .asciiz "\n--------------------MAIN MENU--------------------\n(1) Encrypt string\n(2) Decrypt string\n\nEnter '1' or '2' for your selection: "
 	lineBreak: .asciiz "\n-------------------------------------------------\n"
@@ -257,7 +257,7 @@ decrypt:
 	beq $s1, 1, decryptByShift # If input is 1, decrypt string with known shift amount
 	move $t5, $zero #initialize shift amount
 	addi $t5, $t5, 1 #start shift at one
-	beq $s1, 2, decryptBy1 # If input is 2, decrypt string by shifting 1 at a time
+	beq $s1, 2, Increment # If input is 2, decrypt string by shifting 1 at a time
 
 	# Invalid input
 	printString(invalidInput)
@@ -318,8 +318,24 @@ decrypt_end:
 	syscall
 	
 	j Exit
+
+# ask user if they want to increment shift by 1 or -1
+Increment:
+	#prompt user for positive or negative 1
+	printString(increment)
 	
-#user does not know shift amount, continuously increment shift by 1
+	# Get user input
+	li $v0, 5
+	syscall
+	move $s2, $v0 #save user input in $s1
+	
+	bne $s2, 1, decryptBy1
+	bne $s2, -1, decryptBy1
+	
+	printString(invalidInput)
+	j Increment
+	
+#user does not know shift amount, continuously increment shift by 1	
 decryptBy1:
 	# Prompt User for String #
 	printString(getString)
@@ -358,7 +374,6 @@ shift1:
 again:
 	# Print Out New String #
 	printString(shiftedString)
-	syscall
 	la $a0, outputBuffer
 	syscall
 	
@@ -374,8 +389,8 @@ again:
 	# Reload base address of user string into $t7 and reload base address of outputBuffer into $t8
 	la $t7, buffer
 	la $t8, outputBuffer
-	# Add 1 to shift amount
-	addi $t5, $t5, 1
+	# Add user increment to shift amount
+	add $t5, $t5, $s1
 	#shift by new amount if 1, exit program if 2
 	beq $s1, 1, shift1
 	beq $s1, 2, Exit
