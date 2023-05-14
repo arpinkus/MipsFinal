@@ -13,7 +13,7 @@
 # ~ get characeter from sentence
 # ~ Find the character's number
 # ~ add character's location number + key Code what to do if 26 is reached: take the greater number and subtract 26 until it is less than 26
-# ~ build a new sentence using the new characters (we could print a char array in a loop
+# ~ build a new sentence using the new characters (we could print a char array in a loop)
 # ~ print result
 
 # Macro to print string labels
