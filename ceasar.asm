@@ -16,16 +16,14 @@
 # ~ build a new sentence using the new characters (we could print a char array in a loop
 # ~ print result
 
-.macro shift(%int)
-	addi $t1, $t0, %int
+# Macro to print string labels
+.macro printString(%stringLabel)
+li $v0, 4
+la $a0, %stringLabel
+syscall
 .end_macro
 
-.macro printAscii(%int)
-	li $v0, 1
-	move $a0, %int
-	syscall
-.end_macro
-
+# Check to see if the number in the parameter is within the range of a number or letter in the ascii table
 .macro isValidLetter(%int)
 	blt %int, 48, Fail
 	ble %int, 57, number
@@ -41,13 +39,16 @@ Lowercase:
 	blt %int, 97, Fail
 	li $t6, 2 #2 = lowercase
 	j Success
-Fail:
-	li $t6, 0 #0 = not a letter
-	j Success
 	
 number:
 	li $t6, 3 #3 = a number
+	j Success
 	
+Fail:
+	li $t6, 0 #0 = not a letter
+	
+	
+# Exits macro
 Success:
 	# Testing Print #
 	#li $v0, 4
@@ -61,66 +62,66 @@ Success:
 # The loop ensures that the shift is actually shifted by the user's amount. 
 # If the shift amount entered is greater than 26, the shift is looped more than once. (it only needs to loop by divisions of 26)
 .macro shiftAscii(%int, %shift)
+
+	# Check if int is a letter or number within ascii table range#
 	isValidLetter(%int)
-	# Check if Char is a Letter #
-	beq $t6, 0, shift_end
+	beq $t6, 0, shift_end #If isValidLetter macro assigns $t6 0, then it is not a number or letter so it does not become shifted and exits shiftAscii
 
 	# Add by Shift Amount #
 	add $t2, %int, %shift
 
-	# Check if Lowercase or Uppercase #
+	# Check if Lowercase or Uppercase or Number #
+	beq $t6, 1, Uppercase
 	beq $t6, 2, Lowercase
-	beq $t6, 1, Uppercase #unnecessary (just for certainty)
 	beq $t6, 3, Number
 	
-#-----------------------------------------------------we can move the li $t4, 26 before all the labels so that its just written once, unless $t4 is used for something other than storing 26------------------
 
 # Loop for Uppercase #
 Uppercase:
 	# Exit if Number is in Range #
-	blt $t2, 65, negativeShiftUpper
-	ble $t2, 91, shift_end
+	blt $t2, 65, negativeShiftUpper #if lower than 65, out of range of uppercase letters, go to negativeShiftUpper
+	ble $t2, 91, shift_end #if lower than or equal to 91 but equal to 65 or above, then in range and no need to correct, exit macro
 	
 
 	# Bring Character Back to 'A' #
-	li $t4, 26 #save number 26
-	sub $t2, $t2, $t4
-	j Uppercase
+	subi $t2, $t2, 26
+	j Uppercase #check to see if number is range
 negativeShiftUpper:
-	#when decrypting or negative shift
+	#when decrypting or negative shift, brings character back to 'A'
 	addi $t2, $t2, 26
 	# Loop #
-	j Uppercase
+	j Uppercase #check again to see if number is in range
 
-	# Loop for Lowercase #
+# Loop for Lowercase #
 Lowercase:
-	blt $t2, 97, negativeShiftLower
-	ble $t2, 122, shift_end
+	blt $t2, 97, negativeShiftLower #if lower than 97, out of range of lowercase letters, go to negativeShiftLower
+	ble $t2, 122, shift_end #if lower than or equal to 122 but equal to 97 or above, then in range and no need to correct, exit macro
 
 	# Bring Character Back to 'a' #
-	li $t4, 26 #save number 26
-	sub $t2, $t2, $t4
-	j Lowercase
+	subi $t2, $t2, 26
+	j Lowercase #check to see if number is in range
 negativeShiftLower:
-	#when decrypting or negative shift
+	#when decrypting or negative shift, brings character back to 'a'
 	addi $t2, $t2, 26
 
 	# Loop #
-	j Lowercase
+	j Lowercase #check again to see if number is in range
 	
+# Loop for Number #
 Number:
 	#exit if number is in range
-	blt $t2, 48, numberShift
+	blt $t2, 48, negativeShiftNumber #If lower than 48, out of range of numbers, go to negativeShiftNumber
 	ble $t2, 57, shift_end
 	
 	# Bring number back to '0' #
 	subi $t2, $t2, 10
-	j Number
-numberShift:
+	j Number #check again to see if number is in range
+negativeShiftNumber:
+	#when decrypting or negative shift, brings number back to '0'
 	addi $t2, $t2, 10
-	j Number
+	j Number #check again to see if number is in range
 	
-
+#exits macro
 shift_end:
 	# Testing #
 	# Print newLine #
@@ -157,38 +158,32 @@ shift_end:
 	invalidInput: .asciiz "\nPlease provide a valid input!\n"
 .text
 main:
+#start of program
 menu:
 	# Print menu
-	li $v0, 4
-	la $a0, menuPrompt
-	syscall
+	printString(menuPrompt)
 	
 	# Get user input
 	li $v0, 5
 	syscall
-	move $s1, $v0
+	move $s1, $v0 #save user input into $s1
 	
 	# Print line break
-	li $v0, 4
-	la $a0, lineBreak
-	syscall
+	printString(lineBreak)
 	
 	beq $s1, 1, encrypt # If input is 1, encrypt string
 	beq $s1, 2, decrypt # If input is 2, decrypt string
 
 	# Invalid input
-	li $v0, 4
-	la $a0, invalidInput
-	syscall
+	printString(invalidInput)
 	
+	#jump back to menu to reprompt user for option
 	j menu
 	
-
+#user chose to encrypt string
 encrypt:
 	# Prompt User for String #
-	li $v0, 4
-	la $a0, getString
-	syscall
+	printString(getString)
 	
 	# Get User String #
 	li $v0, 8
@@ -198,9 +193,7 @@ encrypt:
 	move $s0, $v0  #save user string in $s0
 	
 	# Prompt User for Shift Amount #
-	li $v0, 4
-	la $a0, getShiftAmount
-	syscall
+	printString(getShiftAmount)
 	
 	# Get User Int #
 	li $v0, 5
@@ -209,21 +202,25 @@ encrypt:
 	
 	# Loop through string character by character
 	
-	# Get address of string
+	# Get address of user string and load into $t7 and load address of empty buffer into $t8
 	la $t7, buffer
 	la $t8, outputBuffer
-	#move $t7, $a0
+	
+#loops through each character of user inputted string and shifts by user given amount
 loop:
+	#load a character of given user string into $t2
 	lb $t2, 0($t7)
 	
+	# for testing #
 	#li $v0, 4
 	#la $a0, newLine
 	#syscall
 	
-	# Shift #
+	# Shift charactere $t2 by the given user shift amount stored in $s7 #
 	shiftAscii($t2, $s7)
-	sb $t2, 0($t8)
+	sb $t2, 0($t8) #store shifted character, $t2, into outputBuffer $t8
 	
+	#increment address of user string and outputBuffer by 1
 	addi $t7, $t7, 1
 	addi $t8, $t8, 1
 	
@@ -234,50 +231,43 @@ loop:
 	beq $t2, 0x00, encrypt_end
 	
 	j loop
-	
+
+#finished shifting all characters of string, output resulting ciphertext
 encrypt_end:
 	# Print Out New String #
-	li $v0, 4
-	la $a0, shiftedString
-	syscall
+	printString(shiftedString)
 	la $a0, outputBuffer
 	syscall
 	
 	j Exit
-	
+
+#user chose to decrypt a string
 decrypt:
 	# Print decrypt menu
-	li $v0, 4
-	la $a0, decryptPrompt
-	syscall
+	printString(decryptPrompt)
 	
 	# Get user input
 	li $v0, 5
 	syscall
-	move $s1, $v0
+	move $s1, $v0 #save user input in $s1
 	
 	# Print line break
-	li $v0, 4
-	la $a0, lineBreak
-	syscall
+	printString(lineBreak)
 	
-	move $t5, $zero
-	addi $t5, $t5, 1
-	beq $s1, 1, decryptByShift # If input is 1, encrypt string
-	beq $s1, 2, decryptBy1 # If input is 2, decrypt string
+	beq $s1, 1, decryptByShift # If input is 1, decrypt string with known shift amount
+	move $t5, $zero #initialize shift amount
+	addi $t5, $t5, 1 #start shift at one
+	beq $s1, 2, decryptBy1 # If input is 2, decrypt string by shifting 1 at a time
 
 	# Invalid input
-	li $v0, 4
-	la $a0, invalidInput
-	syscall
+	printString(invalidInput)
 	
 	j menu
 
+#user knows the key, the shift amount
 decryptByShift:
 	# Prompt User for String #
-	li $v0, 4
-	la $a0, getString
-	syscall
+	printString(getString)
 	
 	# Get User String #
 	li $v0, 8
@@ -287,33 +277,28 @@ decryptByShift:
 	move $s0, $v0  #save user string in $s0
 	
 	# Prompt User for Shift Amount #
-	li $v0, 4
-	la $a0, getShiftAmount
-	syscall
+	printString(getShiftAmount)
 	
 	# Get User Int #
 	li $v0, 5
 	syscall
 	move $s7, $v0  #save shift in $s7
-	mul $s7, $s7, -1
+	mul $s7, $s7, -1 #multiply user shift by negative 1
 	
-	# Loop through string character by character
-	
-	# Get address of string
+	# Get address of user string and load into $t7 and load address of empty buffer into $t8
 	la $t7, buffer
 	la $t8, outputBuffer
-	#move $t7, $a0
+
+# Loop through string character by character
 deloop:
+	#load a character of given user string into $t2
 	lb $t2, 0($t7)
 	
-	#li $v0, 4
-	#la $a0, newLine
-	#syscall
-	
-	# Shift #
+	# Shift charactere $t2 by $t7 which is the negative of the given user shift amount #
 	shiftAscii($t2, $s7)
-	sb $t2, 0($t8)
+	sb $t2, 0($t8) #store shifted character, $t2, into outputBuffer $t8
 	
+	#increment address of user string and outputBuffer by 1
 	addi $t7, $t7, 1
 	addi $t8, $t8, 1
 	
@@ -325,21 +310,19 @@ deloop:
 	
 	j deloop
 	
+#finished shifting all characters of string, output resulting plaintext
 decrypt_end:
 	# Print Out New String #
-	li $v0, 4
-	la $a0, shiftedString
-	syscall
+	printString(shiftedString)
 	la $a0, outputBuffer
 	syscall
 	
 	j Exit
 	
+#user does not know shift amount, continuously increment shift by 1
 decryptBy1:
 	# Prompt User for String #
-	li $v0, 4
-	la $a0, getString
-	syscall
+	printString(getString)
 	
 	# Get User String #
 	li $v0, 8
@@ -348,17 +331,19 @@ decryptBy1:
 	syscall
 	move $s0, $v0  #save user string in $s0
 	
-	# Get address of string
+	# Get address of user string and load into $t7 and load address of empty buffer into $t8
 	la $t7, buffer
 	la $t8, outputBuffer
-	#move $t7, $a0
+
 shift1:
+	#load a character of given user string into $t2
 	lb $t2, 0($t7)
 	
 	# Shift #
 	shiftAscii($t2, $t5)
 	sb $t2, 0($t8)
 	
+	#increment address of user string and outputBuffer by 1
 	addi $t7, $t7, 1
 	addi $t8, $t8, 1
 	
@@ -372,37 +357,35 @@ shift1:
 	
 again:
 	# Print Out New String #
-	li $v0, 4
-	la $a0, shiftedString
+	printString(shiftedString)
 	syscall
 	la $a0, outputBuffer
 	syscall
 	
 	
 	# Ask user if they want to shift again
-	li $v0, 4
-	la $a0, shiftAgain
-	syscall
+	printString(shiftAgain)
 	
 	# Get user input
 	li $v0, 5
 	syscall
-	move $s1, $v0
+	move $s1, $v0 #store user input into $s1
 	
+	# Reload base address of user string into $t7 and reload base address of outputBuffer into $t8
 	la $t7, buffer
 	la $t8, outputBuffer
+	# Add 1 to shift amount
 	addi $t5, $t5, 1
+	#shift by new amount if 1, exit program if 2
 	beq $s1, 1, shift1
 	beq $s1, 2, Exit
 	
 	# Invalid input
-	li $v0, 4
-	la $a0, invalidInput
-	syscall
+	printString(invalidInput)
 	
 	j again
 	
-	
+#Exit program
 Exit:
 	# Exit Program #
 	li $v0, 10
