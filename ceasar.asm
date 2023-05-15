@@ -25,6 +25,8 @@ syscall
 
 # Check to see if the number in the parameter is within the range of a number or letter in the ascii table
 .macro isValidLetter(%int)
+	blt %int, 48, Fail
+	ble %int, 57, number
 	blt %int, 65, Fail
 	ble %int, 90, Uppercase
 	blt %int, 97, Fail
@@ -36,6 +38,10 @@ Uppercase:
 Lowercase:
 	blt %int, 97, Fail
 	li $t6, 2 #2 = lowercase
+	j Success
+	
+number:
+	li $t6, 3 #3 = a number
 	j Success
 	
 Fail:
@@ -141,7 +147,7 @@ shift_end:
 	buffer: .space 150
 	newLine: .asciiz "\n"
 	#check: .asciiz "\nCheck number: "
-	decryptPrompt: .asciiz "\n(1) Know Shift Amount\n(2) Do Not Know Shift Amount\nEnter '1' or '2' for your selection: "
+	decryptPrompt: .asciiz "\n(1) Know Shift Amount\n(2)Do Not Know Shift Amount\nEnter '1' or '2' for your selection: "
 	shiftAgain: .asciiz "\n(1) Yes\n(2) No\nShift Again?: "
 	
 	shiftedString: .asciiz "\nShifted string: "
@@ -150,7 +156,6 @@ shift_end:
 	menuPrompt: .asciiz "\n--------------------MAIN MENU--------------------\n(1) Encrypt string\n(2) Decrypt string\n\nEnter '1' or '2' for your selection: "
 	lineBreak: .asciiz "\n-------------------------------------------------\n"
 	invalidInput: .asciiz "\nPlease provide a valid input!\n"
-
 .text
 main:
 #start of program
